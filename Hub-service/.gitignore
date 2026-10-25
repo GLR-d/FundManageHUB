@@ -1,0 +1,21 @@
+# Python 虚拟环境和缓存。
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 本机配置；示例文件可以提交。
+.env
+.env.*
+!.env.example
+
+# 编辑器配置。
+.idea/
+.vscode/
+
+# 本机运行数据和日志。
+chroma_data/
+logs/

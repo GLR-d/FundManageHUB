@@ -1,0 +1,26 @@
+# 依赖、构建结果和 TypeScript 增量检查缓存。
+node_modules/
+/dist/
+*.tsbuildinfo
+
+# 本机环境配置；示例文件可以提交。
+.env
+.env.*
+!.env.example
+
+# 包管理器生成的调试日志。
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 编辑器和操作系统产生的本机文件。
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

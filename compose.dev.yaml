@@ -1,0 +1,9 @@
+# 本机开发时叠加此文件：Python 代码保存后自动重启后端。
+services:
+  backend:
+    command: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+    environment:
+      WATCHFILES_FORCE_POLLING: "true"
+      WATCHFILES_POLL_DELAY_MS: "500"
+    volumes:
+      - ./Hub-service:/app:ro

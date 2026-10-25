@@ -6,30 +6,34 @@
 
 - 前端：Vue 3、TypeScript、Vite。
 - 后端：FastAPI、SQLAlchemy 异步 ORM。
-- 存储：MySQL、Redis；聊天使用 LangChain / LangGraph，文档向量库使用 Chroma。
-- 部署：Docker Compose、Nginx。
+- 存储：MySQL、Redis。
+- 聊天与文档检索：LangChain、LangGraph、Chroma。
 
 ## 目录
 
-- `Hub-vue/`：前端页面和接口请求。
-- `Hub-service/`：后端接口、业务逻辑、数据库访问和聊天功能。
-- `deploy/`：Nginx 配置及容器运行配置。
-- `compose.yaml`、`compose.dev.yaml`：容器部署和后端开发模式配置。
+- `Hub-vue/`：前端页面、接口请求及测试。
+- `Hub-service/`：后端接口、业务逻辑、数据库访问、聊天功能及测试。
 
-## 启动与停止
+## 本机启动
 
-先启动 Docker Desktop，再在项目根目录执行：
+准备 Python 3.12、Node.js 24、MySQL，以及支持 JSON/Search 功能的 Redis。
+在 `Hub-service/.env` 中配置数据库、JWT、Redis，以及 `LLM_*`、`EMBEDDING_*` 模型服务；邮箱与图片功能分别需要 SMTP 和 OSS 配置。
+
+后端：在项目根目录打开终端执行：
 
 ```powershell
-# 构建并启动；更新前后端后也可执行此命令
-docker compose -f compose.yaml -f compose.dev.yaml up -d --build
-
-# 停止服务，保留数据卷
-docker compose stop
+cd Hub-service
+python -m pip install -r requirements.txt
+python -B scripts/init_database.py
+python main.py
 ```
 
-启动后访问 [项目首页](http://localhost:8088)；[接口文档](http://localhost:8088/api/docs)。Nginx 提供前端页面，并将 `/api/` 请求转发给后端。
+前端：在项目根目录另开一个终端执行：
 
-开发模式下，Python 代码保存后自动重载；前端修改后需重新构建 Nginx 镜像。
+```powershell
+cd Hub-vue
+npm ci
+npm run dev
+```
 
-本机后端配置使用 `Hub-service/.env`，容器配置使用 `deploy/runtime/*.env`，两者独立。数据库及聊天等持久化数据保存在 Docker 数据卷中。
+访问 [前端页面](http://localhost:7070)；[后端接口文档](http://localhost:8080/docs)。

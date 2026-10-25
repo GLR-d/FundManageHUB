@@ -1,5 +1,11 @@
-# 容器运行配置：数据库密码、JWT、邮件、OSS 和模型密钥。
-/deploy/runtime/
+# 本机部署文件保留在本地，不纳入源码仓库。
+/deploy/
+/compose*.yaml
+/compose*.yml
+Dockerfile
+Dockerfile.*
+.dockerignore
+docker/
 
 # 本机环境配置；保留不含密钥的配置示例。
 .env

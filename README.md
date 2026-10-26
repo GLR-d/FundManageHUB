@@ -1,4 +1,4 @@
-# FundsMangeHub
+# FundManageHUB
 
 ## 技术栈
 

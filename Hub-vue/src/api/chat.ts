@@ -3,7 +3,7 @@ import { captureSession, isCurrentSession, onSessionChange, sessionVersion } fro
 import { expireSession } from '@/services/sessionExpiry'
 import request from '@/utils/request'
 import type { ApiResult, RequestConfig } from '@/types/api'
-import type { ChatConversation } from '@/types/chat'
+import type { ChatConversation, ChatQuestionEvent, ChatStreamRequest } from '@/types/chat'
 
 import { isAxiosError } from 'axios'
 
@@ -24,9 +24,10 @@ export const removeConversation = (id: string, config: RequestConfig = {}) => ch
 export const importConversation = (data: ChatConversation, config: RequestConfig = {}) => chatRequest(request.post<unknown, ApiResult>('/chat/conversations/import', data, config))
 
 export const streamChat = async (
-  data: { conversationId: string; message: string; messageId?: string; replyId?: string },
+  data: ChatStreamRequest,
   onToken: (content: string) => void,
   signal?: AbortSignal,
+  onQuestion?: (event: ChatQuestionEvent) => void,
 ) => {
   const previousVersion = sessionVersion.value
   const snapshot = captureSession()
@@ -37,6 +38,7 @@ export const streamChat = async (
   signal?.addEventListener('abort', abort, { once: true })
   if (signal?.aborted) abort()
   let done = false
+  let questionEvent: ChatQuestionEvent | null = null
 
   try {
     if (controller.signal.aborted) throw controller.signal.reason
@@ -63,6 +65,18 @@ export const streamChat = async (
           const payload = JSON.parse(event.data) as { content?: unknown }
           if (typeof payload?.content !== 'string') throw new Error('收到无效的回复片段')
           onToken(payload.content)
+        } else if (event.event === 'question') {
+          const payload = JSON.parse(event.data) as ChatQuestionEvent
+          if (payload.conversationId !== data.conversationId || typeof payload.messageId !== 'string' ||
+              (data.replyId && payload.messageId !== data.replyId) || !Array.isArray(payload.questions) || !payload.questions.length ||
+              payload.questions.some(item => !item || typeof item.interruptId !== 'string' || !item.interruptId ||
+                typeof item.question !== 'string' || !item.question || !Array.isArray(item.options) ||
+                item.options.some(option => typeof option !== 'string') || typeof item.allowCustomAnswer !== 'boolean')) {
+            throw new Error('收到无效的提问信息')
+          }
+          questionEvent = payload
+          done = true
+          onQuestion?.(payload)
         } else if (event.event === 'done') {
           done = true
         } else if (event.event === 'error') {
@@ -80,6 +94,7 @@ export const streamChat = async (
     if (controller.signal.aborted) throw controller.signal.reason
     if (!isCurrentSession(snapshot)) throw new Error('登录会话已变更')
     if (!done) throw new Error('回复未完成')
+    return questionEvent
   } finally {
     unsubscribe()
     signal?.removeEventListener('abort', abort)

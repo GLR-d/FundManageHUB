@@ -21,7 +21,7 @@
       </TransitionGroup>
     </aside>
     <div class="chat-main">
-      <ChatView :conversation-id="currentId" :conversation-title="currentConversation?.title || '新对话'" :history-hidden="!showSidebar" :messages="currentMessages" :loading="loading || detailLoading || !loadedIds.has(currentId)" @toggle-history="toggleSidebar" @send-success="handleSendSuccess" />
+      <ChatView :conversation-id="currentId" :conversation-title="currentConversation?.title || '新对话'" :history-hidden="!showSidebar" :messages="currentMessages" :pending-questions="currentConversation?.pendingQuestions || []" :loading="loading || detailLoading || !loadedIds.has(currentId)" @toggle-history="toggleSidebar" @send-success="handleSendSuccess" @settled="refreshConversation" />
     </div>
     <UiDialog v-model="renameVisible" title="重命名对话" width="420px">
       <form id="chat-rename-form" class="rename-form" @submit.prevent="saveRename" @keydown.enter="handleRenameEnter">
@@ -95,6 +95,7 @@ const updateMetadata = (conversation: ChatConversation, metadata: ChatConversati
   conversation.pinned = metadata.pinned
   conversation.createdAt = metadata.createdAt
   conversation.metadataUpdatedAt = metadata.metadataUpdatedAt
+  if (metadata.pendingQuestions) conversation.pendingQuestions = metadata.pendingQuestions
 }
 const loadConversation = async (id: string) => {
   if (historyList.value.find(item => item.id === id)?.messages.some(message => message.pending)) return
@@ -120,6 +121,9 @@ const switchConversation = async (id: string) => {
   currentId.value = id
   if (window.matchMedia('(max-width: 760px)').matches) showSidebar.value = false
   await loadConversation(id)
+}
+const refreshConversation = async (id: string) => {
+  if (isActive() && currentId.value === id) await loadConversation(id)
 }
 const createNewConversation = async () => {
   if (!isActive() || mutating.value) return

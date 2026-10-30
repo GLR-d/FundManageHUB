@@ -1,9 +1,12 @@
-import type { ChatMessage, ChatConversation, ChatMessageEvent } from '@/types/chat'
+import type { ChatMessage, ChatConversation, ChatMessageEvent, ChatQuestion } from '@/types/chat'
 
 export const CHAT_CONVERSATION_TITLE_MAX_LENGTH = 50
-type MessageInput = { role: 'user' | 'ai'; id?: unknown; content?: unknown; createdAt?: unknown; updatedAt?: unknown; expiresAt?: unknown; pending?: unknown; failed?: unknown; interrupted?: unknown; conversationId?: unknown }
+type MessageInput = { role: 'user' | 'ai'; id?: unknown; content?: unknown; createdAt?: unknown; updatedAt?: unknown; expiresAt?: unknown; pending?: unknown; failed?: unknown; interrupted?: unknown; conversationId?: unknown; questions?: unknown }
 const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === 'object' && !Array.isArray(value))
 const isMessage = (value: unknown): value is MessageInput => isRecord(value) && (value.role === 'user' || value.role === 'ai')
+const questions = (value: unknown): ChatQuestion[] => Array.isArray(value) ? value.filter((item): item is ChatQuestion =>
+  isRecord(item) && typeof item.interruptId === 'string' && typeof item.question === 'string' &&
+  Array.isArray(item.options) && item.options.every(option => typeof option === 'string') && typeof item.allowCustomAnswer === 'boolean') : []
 const finite = (value: unknown, fallback: number) => typeof value === 'number' && Number.isFinite(value) ? value : fallback
 let lastTimestamp = 0
 const timestamp = () => { lastTimestamp = Math.max(Date.now(), lastTimestamp + 1); return lastTimestamp }
@@ -35,6 +38,7 @@ const conversationMetadata = (record: Record<string, unknown>, id: string, index
   title: typeof record.title === 'string' ? record.title : '对话',
   createdAt: finite(record.createdAt, index),
   ...(typeof record.pinned === 'boolean' ? { pinned: record.pinned } : {}),
+  ...(Array.isArray(record.pendingQuestions) ? { pendingQuestions: questions(record.pendingQuestions) } : {}),
   ...(typeof record.metadataUpdatedAt === 'number' && Number.isFinite(record.metadataUpdatedAt) ? { metadataUpdatedAt: record.metadataUpdatedAt } : {})
 })
 const compareConversations = (a: ConversationMetadata, b: ConversationMetadata) =>
@@ -53,7 +57,8 @@ const normalizeMessage = (msg: MessageInput, conversationId: string, index: numb
     expiresAt: deadline,
     pending: Boolean(msg.pending && !interrupted),
     failed: Boolean(msg.failed || interrupted),
-    interrupted
+    interrupted,
+    ...(Array.isArray(msg.questions) ? { questions: questions(msg.questions) } : {})
   }
 }
 const unfinished = (message: Partial<ChatMessage> | null | undefined) => Boolean(message?.pending || message?.interrupted)
@@ -129,7 +134,9 @@ export const applyChatMessage = (history: ChatConversation[], message: ChatMessa
   if (message.replace && index === -1) return false
   const old = index === -1 ? null : conversation.messages[index]
   if (old && !old.pending && message.pending) return false
-  const next = { ...old, ...message, interrupted: false, createdAt: old?.createdAt ?? timestamp(), updatedAt: timestamp(), expiresAt: message.pending ? Date.now() + 125000 : undefined }
+  const { pendingQuestions, ...fields } = message
+  if (pendingQuestions !== undefined) conversation.pendingQuestions = pendingQuestions
+  const next = { ...old, ...fields, interrupted: false, createdAt: old?.createdAt ?? timestamp(), updatedAt: timestamp(), expiresAt: message.pending ? Date.now() + 125000 : undefined }
   if (index === -1) conversation.messages.push(next)
   else conversation.messages[index] = next
   return true
@@ -144,10 +151,12 @@ export const migrateChatHistory = async (
   if (!key || localStorage.getItem(key + ':redis-migrated-v1') === '1') return
   const history = readChatHistory(key)
   for (const conversation of history) {
-    const messages = conversation.messages.map(message => ({ ...message, content: message.pending && !message.content ? '回复未完成，请重新发送' : message.content, pending: false, failed: Boolean(message.failed || message.pending), interrupted: Boolean(message.interrupted || message.pending) }))
+    // 浏览器旧记录只能迁移展示消息，不能导入服务端的待回答状态。
+    const { pendingQuestions: _pendingQuestions, ...metadata } = conversation
+    const messages = conversation.messages.map(({ questions: _questions, ...message }) => ({ ...message, content: message.pending && !message.content ? '回复未完成，请重新发送' : message.content, pending: false, failed: Boolean(message.failed || message.pending), interrupted: Boolean(message.interrupted || message.pending) }))
     for (let start = 0; start < Math.max(1, messages.length); start += 100) {
       if (!isActive()) throw new Error('登录会话已变更')
-      await upload({ ...conversation, title: conversation.title.trim().slice(0, CHAT_CONVERSATION_TITLE_MAX_LENGTH) || '对话', messages: messages.slice(start, start + 100) })
+      await upload({ ...metadata, title: conversation.title.trim().slice(0, CHAT_CONVERSATION_TITLE_MAX_LENGTH) || '对话', messages: messages.slice(start, start + 100) })
     }
   }
   if (isActive()) localStorage.setItem(key + ':redis-migrated-v1', '1')

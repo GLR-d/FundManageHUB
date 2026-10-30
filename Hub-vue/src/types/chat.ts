@@ -1,3 +1,22 @@
+export interface ChatQuestion {
+  interruptId: string
+  question: string
+  options: string[]
+  allowCustomAnswer: boolean
+}
+
+export interface ChatQuestionEvent {
+  conversationId: string
+  messageId: string
+  questions: ChatQuestion[]
+}
+
+export type ChatStreamRequest = {
+  conversationId: string
+  messageId?: string
+  replyId?: string
+} & ({ message: string } | { interruptId: string; answer: string })
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'ai'
@@ -9,6 +28,7 @@ export interface ChatMessage {
   failed?: boolean
   interrupted?: boolean
   conversationId?: string
+  questions?: ChatQuestion[]
 }
 
 export interface ChatConversation {
@@ -18,6 +38,7 @@ export interface ChatConversation {
   messages: ChatMessage[]
   pinned?: boolean
   metadataUpdatedAt?: number
+  pendingQuestions?: ChatQuestion[]
 }
 
 export interface ChatMessageEvent {
@@ -28,4 +49,6 @@ export interface ChatMessageEvent {
   pending?: boolean
   failed?: boolean
   replace?: boolean
+  questions?: ChatQuestion[]
+  pendingQuestions?: ChatQuestion[]
 }

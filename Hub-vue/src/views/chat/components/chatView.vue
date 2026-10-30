@@ -25,15 +25,27 @@
             <div class="message-label">
               <span>{{ msg.role === 'ai' ? 'AI 助手' : userLabel }}</span>
               <span v-if="msg.pending && msg.content" class="message-state">生成中</span>
+              <span v-else-if="msg.questions?.some(question => isQuestionPending(question, msg.id))" class="message-state">等待回答</span>
               <span v-else-if="msg.failed" class="message-state is-interrupted">回复未完成</span>
             </div>
-            <div class="bubble" :class="{ 'is-pending': msg.pending && !msg.content }">
+            <div v-if="msg.content || msg.pending || !msg.questions?.length" class="bubble" :class="{ 'is-pending': msg.pending && !msg.content }">
               <template v-if="msg.pending && !msg.content">
                 <span class="typing-indicator" aria-hidden="true"><i /><i /><i /></span>
                 <span class="typing-label">正在思考…</span>
               </template>
               <template v-else>{{ msg.content }}</template>
             </div>
+            <form v-for="question in msg.questions || []" :key="question.interruptId" class="question-card" @submit.prevent="submitQuestion(question, msg.id)">
+              <p class="question-title">{{ question.question }}</p>
+              <fieldset :disabled="sending || loading || !isQuestionPending(question, msg.id)">
+                <legend class="question-hint">{{ isQuestionPending(question, msg.id) ? (question.allowCustomAnswer ? '请选择一项或输入你的答案' : '请选择一项') : '此问题已提交或已结束' }}</legend>
+                <div v-if="question.options.length" class="question-options">
+                  <button v-for="(option, index) in question.options" :key="index" type="button" :class="{ 'is-selected': selectedOptions[question.interruptId] === option }" :aria-pressed="selectedOptions[question.interruptId] === option" @click="selectOption(question, option)">{{ option }}</button>
+                </div>
+                <textarea v-if="question.allowCustomAnswer" v-model="questionDrafts[question.interruptId]" :aria-label="'自行输入：' + question.question" placeholder="也可以输入你的答案…" rows="2" :maxlength="messageLimit" @input="selectedOptions[question.interruptId] = ''" />
+                <button v-if="isQuestionPending(question, msg.id)" type="submit" class="ui-button ui-button--primary question-submit" :disabled="!questionAnswer(question)">提交答案</button>
+              </fieldset>
+            </form>
           </div>
         </article>
       </div>
@@ -41,18 +53,18 @@
 
     <footer class="chat-footer">
       <form class="chat-composer" @submit.prevent="sendMessage">
-        <textarea ref="composerRef" v-model="inputText" aria-label="发送消息" placeholder="发送消息，聊聊开支或预算…" rows="2" :maxlength="messageLimit" @compositionstart="composing = true" @compositionend="composing = false" @keydown.enter="handleEnter" />
+        <textarea ref="composerRef" v-model="inputText" aria-label="发送消息" :placeholder="hasPendingQuestions ? '请先回答上方的问题' : '发送消息，聊聊开支或预算…'" :disabled="hasPendingQuestions" rows="2" :maxlength="messageLimit" @compositionstart="composing = true" @compositionend="composing = false" @keydown.enter="handleEnter" />
         <div class="composer-actions">
           <span v-if="inputText.length >= 9000" class="character-count" aria-label="已输入字数">{{ inputText.length }} / {{ messageLimit }}</span>
           <UiButton v-if="sending" class="send-button stop-button" circle aria-label="停止生成" title="停止生成" @click="stopGeneration"><UiIcon name="stop" /></UiButton>
-          <UiButton v-else class="send-button" type="primary" circle :disabled="loading || !inputText.trim() || !conversationId || inputText.trim().length > messageLimit" aria-label="发送消息" title="发送消息" @click="sendMessage"><UiIcon name="send" /></UiButton>
+          <UiButton v-else class="send-button" type="primary" circle :disabled="loading || hasPendingQuestions || !inputText.trim() || !conversationId || inputText.trim().length > messageLimit" aria-label="发送消息" title="发送消息" @click="sendMessage"><UiIcon name="send" /></UiButton>
         </div>
       </form>
     </footer>
   </section>
 </template>
 <script setup lang="ts">
-import type { ChatMessage, ChatMessageEvent } from '@/types/chat'
+import type { ChatMessage, ChatMessageEvent, ChatQuestion, ChatQuestionEvent } from '@/types/chat'
 
 import { errorDetails } from '@/utils/errors'
 import UiIcon from '@/components/ui/uiIcon.vue'
@@ -62,8 +74,8 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { streamChat } from '@/api/chat'
 import { captureSession, isCurrentSession, currentUser as userData } from '@/stores/auth'
 import { createMessageId } from '@/services/chatHistory'
-const props = withDefaults(defineProps<{ conversationId?: string; conversationTitle?: string; historyHidden?: boolean; loading?: boolean; messages?: ChatMessage[] }>(), { conversationTitle: '新对话', messages: () => [] })
-const emit = defineEmits<{ 'send-success': [message: ChatMessageEvent]; 'toggle-history': [] }>()
+const props = withDefaults(defineProps<{ conversationId?: string; conversationTitle?: string; historyHidden?: boolean; loading?: boolean; messages?: ChatMessage[]; pendingQuestions?: ChatQuestion[] }>(), { conversationTitle: '新对话', messages: () => [], pendingQuestions: () => [] })
+const emit = defineEmits<{ 'send-success': [message: ChatMessageEvent]; 'toggle-history': []; settled: [conversationId: string] }>()
 const inputText = ref('')
 const composerRef = ref<HTMLTextAreaElement | null>(null)
 const messageLimit = 10000
@@ -82,6 +94,21 @@ const resizeComposer = () => {
 watch(inputText, () => { void nextTick(resizeComposer) })
 const composing = ref(false)
 const sending = ref(false)
+const questionDrafts = ref<Record<string, string>>({})
+const selectedOptions = ref<Record<string, string>>({})
+const hasPendingQuestions = computed(() => props.pendingQuestions.length > 0)
+const isQuestionPending = (question: ChatQuestion, messageId?: string) => props.pendingQuestions.some(item => item.interruptId === question.interruptId) &&
+  (!messageId || props.messages.findLast(message => message.questions?.some(item => item.interruptId === question.interruptId))?.id === messageId)
+const questionAnswer = (question: ChatQuestion) => (question.allowCustomAnswer ? questionDrafts.value[question.interruptId]?.trim() : '') || selectedOptions.value[question.interruptId] || ''
+const selectOption = (question: ChatQuestion, option: string) => {
+  selectedOptions.value[question.interruptId] = option
+  questionDrafts.value[question.interruptId] = ''
+}
+const submitQuestion = async (question: ChatQuestion, messageId?: string) => {
+  if (!isQuestionPending(question, messageId)) return
+  const answer = questionAnswer(question)
+  if (answer) await sendTurn(answer, question.interruptId)
+}
 const snapshot = captureSession()
 let activeController: AbortController | undefined
 let stopReply: (() => void) | undefined
@@ -105,6 +132,8 @@ watch(() => props.conversationId, () => {
   visibleMessageCount.value = messageBatchSize
   loadingOlder.value = false
   inputText.value = ''
+  questionDrafts.value = {}
+  selectedOptions.value = {}
   scrollToBottom()
 }, { immediate: true, flush: 'sync' })
 // 阅读历史时有新消息追加，保留已经展示的第一条，不让它滑出渲染范围。
@@ -156,7 +185,11 @@ const handleEnter = (event: KeyboardEvent) => {
   sendMessage()
 }
 const sendMessage = async () => {
+  if (hasPendingQuestions.value) return
   const content = inputText.value.trim()
+  await sendTurn(content)
+}
+const sendTurn = async (content: string, interruptId?: string) => {
   const conversationId = props.conversationId
   if (!content || content.length > messageLimit || !conversationId || props.loading || sending.value || disposed || !isCurrentSession(snapshot)) return
   const controller = new AbortController()
@@ -165,12 +198,14 @@ const sendMessage = async () => {
   const userMessageId = createMessageId()
   const replyId = createMessageId()
   let answer = ''
-  const updateReply = (text: string, pending: boolean, failed = false) => {
-    if (isCurrentSession(snapshot)) emit('send-success', { conversationId, id: replyId, role: 'ai', content: text, pending, failed, replace: true })
+  let paused: ChatQuestionEvent | undefined
+  const updateReply = (text: string, pending: boolean, failed = false, questions?: ChatQuestion[], pendingQuestions?: ChatQuestion[]) => {
+    if (isCurrentSession(snapshot)) emit('send-success', { conversationId, id: replyId, role: 'ai', content: text, pending, failed, replace: true,
+      ...(questions ? { questions } : {}), ...(pendingQuestions ? { pendingQuestions } : {}) })
   }
-  const finish = (text: string, failed = false) => {
+  const finish = (text: string, failed = false, questions?: ChatQuestion[], pendingQuestions?: ChatQuestion[]) => {
     if (activeController !== controller) return
-    updateReply(text, false, failed)
+    updateReply(text, false, failed, questions, pendingQuestions)
     activeController = undefined
     stopReply = undefined
     sending.value = false
@@ -184,16 +219,25 @@ const sendMessage = async () => {
   inputText.value = ''
   scrollToBottom()
   try {
-    await streamChat({ conversationId, message: content, messageId: userMessageId, replyId }, chunk => {
+    const data = interruptId ? { conversationId, interruptId, answer: content, messageId: userMessageId, replyId } : { conversationId, message: content, messageId: userMessageId, replyId }
+    await streamChat(data, chunk => {
       if (activeController !== controller || controller.signal.aborted) return
       answer += chunk
       updateReply(answer, true)
-    }, controller.signal)
-    finish(answer || '模型没有返回文字内容')
+    }, controller.signal, event => {
+      if (activeController !== controller || controller.signal.aborted) return
+      paused = event
+      updateReply(answer, false, false, event.questions, event.questions)
+    })
+    if (paused) finish(answer, false, paused.questions, paused.questions)
+    else finish(answer || '模型没有返回文字内容', false, undefined, [])
   } catch (cause) {
     const error = errorDetails(cause)
     const message = controller.signal.aborted ? '回复已停止' : (error.message || '回复失败，请重试')
     finish(answer ? answer + '\n\n（' + message + '）' : message, true)
+  } finally {
+    // 正常结束或服务端错误后读取最终状态；主动取消仍保留本地已有正文。
+    if (!controller.signal.aborted && isCurrentSession(snapshot) && !disposed) emit('settled', conversationId)
   }
 }
 </script>
@@ -418,6 +462,23 @@ const sendMessage = async () => {
   gap: 10px;
   min-height: 49px;
 }
+.question-card {
+  margin-top: 10px;
+  padding: 16px;
+  border: 1px solid #dfe6f7;
+  border-radius: 16px;
+  background: #f8faff;
+}
+.question-title { margin: 0 0 10px; color: var(--text); font-size: 14px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.question-card fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.question-hint { margin-bottom: 10px; padding: 0; color: var(--muted); font-size: 12px; }
+.question-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.question-options button { padding: 8px 12px; border: 1px solid #dce3f2; border-radius: 10px; background: #fff; color: #465570; font: inherit; font-size: 13px; text-align: left; overflow-wrap: anywhere; }
+.question-options button.is-selected { border-color: var(--primary); background: var(--primary-tint); color: var(--primary); }
+.question-card textarea { box-sizing: border-box; width: 100%; min-height: 62px; margin-bottom: 10px; padding: 10px 12px; border: 1px solid #dce3f2; border-radius: 10px; outline-color: var(--primary); background: #fff; color: var(--text); font: inherit; font-size: 14px; resize: vertical; }
+.question-card fieldset:disabled { opacity: .65; }
+.question-card button:disabled { cursor: default; }
+.question-submit { min-height: 36px; }
 .typing-label {
   color: #99a2b2;
   font-size: 12px;

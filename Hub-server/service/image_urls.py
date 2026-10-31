@@ -6,8 +6,8 @@ from urllib.parse import unquote, urlsplit
 
 from starlette.concurrency import run_in_threadpool
 
-from core import oss
-from core.config import Settings
+from utils import oss
+from config.settings import Settings
 
 logger = logging.getLogger(__name__)
 

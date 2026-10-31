@@ -7,7 +7,7 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.fund_types import INCOME_TYPES
-from core.security import utcnow
+from utils.security import utcnow
 from repository.dashboard import DashboardRepository
 from schemas.response.dashboard_response import CategoryExpense, DailyExpense, DashboardStatistics, MonthlyExpense
 

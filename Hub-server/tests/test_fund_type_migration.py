@@ -3,7 +3,7 @@
 import pytest
 from sqlalchemy.exc import DBAPIError
 
-from core import database
+from config import database
 from scripts.migrate_fund_types import migrate_fund_types
 from test_fund import authenticate, create_fund
 

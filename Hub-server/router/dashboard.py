@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Query, Request
 
-from core.database import DatabaseSession
+from config.database import DatabaseSession
 from schemas.request.dashboard_request import DashboardMonth
 from schemas.response.dashboard_response import DashboardStatistics
 from schemas.response.result import Result

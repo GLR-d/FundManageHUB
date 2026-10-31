@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Path, Request
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
 from core.messages import Messages
-from core.errors import BusinessError
+from core.exception_handlers import BusinessError
 from schemas.request.chat_request import (
     ChatResumeRequest, ChatStreamRequest, ConversationCreateRequest, ConversationId, ConversationImportRequest, ConversationUpdateRequest,
 )

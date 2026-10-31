@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 import pytest
 
-from core.oss import put_image as sdk_put_image, sign_image_url as sdk_sign_image_url
+from utils.oss import put_image as sdk_put_image, sign_image_url as sdk_sign_image_url
 from test_auth import login
 from test_fund import authenticate, create_fund, image_bytes
 
@@ -110,7 +110,7 @@ async def test_oss_failure_returns_generic_error_without_credentials(
     def unavailable(config, key, content, content_type):
         raise RuntimeError(f"sdk-private-details {config.oss_access_key_id} {config.oss_access_key_secret}")
 
-    monkeypatch.setattr("core.oss.put_image", unavailable)
+    monkeypatch.setattr("utils.oss.put_image", unavailable)
     result = assert_error(await upload(client, upload_headers), 502)
     combined = str(result) + caplog.text
     assert "sdk-private-details" not in combined
@@ -242,7 +242,7 @@ async def test_slow_oss_upload_does_not_block_health_requests(client, upload_hea
         loop.call_soon_threadsafe(started.set)
         assert release.wait(timeout=5), "OSS 上传占用了请求事件循环"
 
-    monkeypatch.setattr("core.oss.put_image", held_upload)
+    monkeypatch.setattr("utils.oss.put_image", held_upload)
     pending = asyncio.create_task(upload(client, upload_headers))
     try:
         await asyncio.wait_for(started.wait(), timeout=2)

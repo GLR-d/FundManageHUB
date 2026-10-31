@@ -10,20 +10,20 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from core import database
-from core.config import get_settings
+from config import database
+from config.settings import get_settings
 from scripts.init_database import initialize_database
 
 # 本组测试覆盖普通接口，排除聊天 SDK、Redis 扩展及模型启动依赖。
 # 只在导入应用时临时替换聊天连接模块；下面的夹具负责测试期间的生命周期。
-chat_bootstrap = ModuleType("core.redis_client")
+chat_bootstrap = ModuleType("config.redis_client")
 chat_bootstrap.open_checkpointer = None
 chat_bootstrap.open_redis = None
 knowledge_bootstrap = ModuleType("agents.tools.knowledge")
 knowledge_bootstrap.search_knowledge = object()
-previous_chat_module = sys.modules.get("core.redis_client")
+previous_chat_module = sys.modules.get("config.redis_client")
 previous_knowledge_module = sys.modules.get("agents.tools.knowledge")
-sys.modules["core.redis_client"] = chat_bootstrap
+sys.modules["config.redis_client"] = chat_bootstrap
 sys.modules["agents.tools.knowledge"] = knowledge_bootstrap
 try:
     from client_helpers import app_client
@@ -31,9 +31,9 @@ try:
 finally:
     # 只恢复被替换的模块，保留正常加载的应用及路由模块。
     if previous_chat_module is None:
-        sys.modules.pop("core.redis_client", None)
+        sys.modules.pop("config.redis_client", None)
     else:
-        sys.modules["core.redis_client"] = previous_chat_module
+        sys.modules["config.redis_client"] = previous_chat_module
     if previous_knowledge_module is None:
         sys.modules.pop("agents.tools.knowledge", None)
     else:
@@ -95,9 +95,9 @@ def mail_outbox(monkeypatch):
     async def capture(settings, recipient, subject, body):
         outbox.append({"recipient": recipient, "subject": subject, "body": body})
 
-    monkeypatch.setattr("core.mail.send_email", capture)
+    monkeypatch.setattr("utils.mail.send_email", capture)
     # 注册辅助函数也通过同一假邮件箱取得验证码，始终不连接真实 SMTP。
-    monkeypatch.setattr("core.mail._test_outbox", outbox, raising=False)
+    monkeypatch.setattr("utils.mail._test_outbox", outbox, raising=False)
     return outbox
 
 
@@ -112,7 +112,7 @@ def oss_objects(monkeypatch):
     def forbid_real_client(*args, **kwargs):
         raise AssertionError("测试禁止连接真实 OSS")
 
-    monkeypatch.setattr("core.oss.put_image", capture)
+    monkeypatch.setattr("utils.oss.put_image", capture)
     monkeypatch.setattr("alibabacloud_oss_v2.Client", forbid_real_client)
     return objects
 
@@ -128,7 +128,7 @@ def oss_signatures(monkeypatch):
         origin = settings.oss_public_base_url.rstrip("/") or f"https://{settings.oss_bucket}.{endpoint}"
         return f"{origin}/{key}?test-signature={len(signed_keys)}"
 
-    monkeypatch.setattr("core.oss.sign_image_url", sign)
+    monkeypatch.setattr("utils.oss.sign_image_url", sign)
     return signed_keys
 
 
@@ -140,7 +140,7 @@ def oss_deletions(monkeypatch):
     def capture(settings, key):
         deleted.append({"bucket": settings.oss_bucket, "key": key})
 
-    monkeypatch.setattr("core.oss.delete_image", capture)
+    monkeypatch.setattr("utils.oss.delete_image", capture)
     return deleted
 
 

@@ -40,7 +40,7 @@ async def test_database_errors_are_classified_logged_and_hidden(
     def fail_session(*args, **kwargs):
         raise error
 
-    monkeypatch.setattr("core.database.async_session", fail_session)
+    monkeypatch.setattr("config.database.async_session", fail_session)
     with caplog.at_level(logging.ERROR):
         response = await client.get(path, headers=headers)
 

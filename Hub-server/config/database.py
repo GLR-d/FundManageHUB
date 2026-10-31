@@ -7,7 +7,7 @@ from fastapi import Depends
 from sqlalchemy import URL, inspect, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
-from core.config import Settings, get_settings
+from config.settings import Settings, get_settings
 from core.fund_types import FUND_TYPE_MAX, fund_type_check_upper_bound
 from models import Base
 

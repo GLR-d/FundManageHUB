@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from core.oss import list_image_keys as sdk_list_image_keys
+from utils.oss import list_image_keys as sdk_list_image_keys
 
 
 def page(keys=(), *, truncated=False, token=None, status=200):

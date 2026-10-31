@@ -8,11 +8,11 @@ from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from core.config import Settings
-from core.errors import BusinessError
-from core.jwt_tokens import SessionIdentity, create_access_token
+from config.settings import Settings
+from core.exception_handlers import BusinessError
+from utils.jwt_tokens import SessionIdentity, create_access_token
 from core.messages import Messages
-from core.security import (
+from utils.security import (
     CAPTCHA_VERIFICATION_SECONDS,
     DUMMY_PASSWORD_HASH,
     MAX_CAPTCHA_ATTEMPTS,

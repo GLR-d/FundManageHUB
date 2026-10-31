@@ -13,7 +13,7 @@ import anyio
 from langgraph.checkpoint.redis.aio import AsyncRedisSaver
 from redis.asyncio import Redis
 
-from core.errors import BusinessError
+from core.exception_handlers import BusinessError
 from core.messages import Messages
 from repository.chat_conversation import ChatConversationRepository
 from schemas.request.chat_request import (

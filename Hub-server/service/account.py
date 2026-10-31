@@ -4,10 +4,10 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.errors import BusinessError
-from core.jwt_tokens import SessionIdentity
+from core.exception_handlers import BusinessError
+from utils.jwt_tokens import SessionIdentity
 from core.messages import Messages
-from core.security import utcnow
+from utils.security import utcnow
 from repository.login import LoginRepository
 from repository.user import UserRepository
 

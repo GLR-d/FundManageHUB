@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pymysql.constants import CR, ER
@@ -11,7 +11,6 @@ from sqlalchemy.exc import DBAPIError, DisconnectionError, OperationalError, SQL
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from core.errors import BusinessError
 from core.messages import Messages
 from schemas.response.result import Result
 
@@ -24,6 +23,13 @@ _UNAVAILABLE_MYSQL_CODES = {
     CR.CR_CONNECTION_ERROR, CR.CR_CONN_HOST_ERROR, CR.CR_UNKNOWN_HOST,
     CR.CR_SERVER_GONE_ERROR, CR.CR_SERVER_LOST, CR.CR_SERVER_LOST_EXTENDED,
 }
+
+
+class BusinessError(Exception):
+    def __init__(self, message: str, status_code: int = 200):
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code
 
 
 def error_response(message: str, status_code: int, headers=None) -> JSONResponse:
@@ -78,12 +84,3 @@ async def redis_error_handler(request: Request, error: RedisError):
     # Redis 错误可能包含连接地址，日志仅记录异常类型。
     logger.error("聊天存储请求失败：%s", type(error).__name__)
     return error_response(Messages.CHAT_UNAVAILABLE, 503)
-
-
-def register_exception_handlers(application: FastAPI) -> None:
-    application.add_exception_handler(BusinessError, business_error_handler)
-    application.add_exception_handler(RequestValidationError, validation_error_handler)
-    application.add_exception_handler(SQLAlchemyError, database_error_handler)
-    application.add_exception_handler(RedisError, redis_error_handler)
-    application.add_exception_handler(StarletteHTTPException, http_error_handler)
-    application.add_exception_handler(Exception, unexpected_error_handler)

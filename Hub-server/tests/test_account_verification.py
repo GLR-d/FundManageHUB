@@ -6,7 +6,7 @@ from datetime import timedelta
 import pytest
 
 from client_helpers import browser_client
-from core.security import utcnow, verify_password
+from utils.security import utcnow, verify_password
 from test_auth import PASSWORD, headers, login, logged_in, register
 from test_email_recovery import BIND_EMAIL, EMAIL, SUCCESS, email_code, verified_user
 

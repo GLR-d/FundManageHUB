@@ -10,12 +10,11 @@ from httpx import ASGITransport, AsyncClient
 from langchain.messages import AIMessageChunk
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from helpers import FakeCheckpointer, FakeRedis
+from helpers import EXCEPTION_HANDLERS, FakeCheckpointer, FakeRedis
 # 复用协议测试中的假图，同时隔离 agents.tools 的知识库启动副作用。
 from test_stream import FakeGraph, parse_events
 from core.auth_middleware import JWTAuthMiddleware
-from core.exception_handlers import register_exception_handlers
-from core.jwt_tokens import SessionIdentity
+from utils.jwt_tokens import SessionIdentity
 from router.chat import router
 from schemas.request.chat_request import ChatRequest
 from service.chat_conversation import ChatConversationService
@@ -30,14 +29,13 @@ class ChatConversationTests(unittest.IsolatedAsyncioTestCase):
         self.redis = FakeRedis()
         self.checkpointer = FakeCheckpointer()
         self.graph = FakeGraph()
-        self.app = FastAPI()
+        self.app = FastAPI(exception_handlers=EXCEPTION_HANDLERS)
         self.app.state.settings = object()
         self.app.state.redis_client = self.redis
         self.app.state.chat_checkpointer = self.checkpointer
         self.app.state.chat_graph = self.graph
         self.app.include_router(router)
         self.app.add_middleware(JWTAuthMiddleware)
-        register_exception_handlers(self.app)
 
         async def identity(token, settings):
             if token not in {"one", "two"}:

@@ -16,7 +16,7 @@ from httpx import ASGITransport, AsyncClient
 from langchain.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
-from helpers import FakeCheckpointer, FakeRedis
+from helpers import EXCEPTION_HANDLERS, FakeCheckpointer, FakeRedis
 
 # tools 包会同时导入知识检索工具；此处只隔离知识库的模型、嵌入和
 # Chroma 启动依赖，common 工具与 AgentContext 仍使用真实生产模块。
@@ -32,8 +32,7 @@ finally:
     else:
         sys.modules["agents.tools.knowledge"] = previous_knowledge_module
 from core.auth_middleware import JWTAuthMiddleware
-from core.exception_handlers import register_exception_handlers
-from core.jwt_tokens import SessionIdentity
+from utils.jwt_tokens import SessionIdentity
 from router.chat import router
 from schemas.request.chat_request import ChatRequest
 from service.chat import ChatService
@@ -84,14 +83,13 @@ def parse_events(body):
 class ChatStreamTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.graph = FakeGraph()
-        self.app = FastAPI()
+        self.app = FastAPI(exception_handlers=EXCEPTION_HANDLERS)
         self.app.state.settings = object()
         self.app.state.chat_graph = self.graph
         self.app.state.redis_client = FakeRedis()
         self.app.state.chat_checkpointer = FakeCheckpointer()
         self.app.include_router(router)
         self.app.add_middleware(JWTAuthMiddleware)
-        register_exception_handlers(self.app)
 
         async def identity(token, settings):
             if token not in {"one", "two"}:

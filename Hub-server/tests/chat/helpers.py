@@ -1,6 +1,26 @@
-"""聊天离线测试的 Redis 替身：只实现通用命令，不连接开发库。"""
+"""聊天离线测试的异常处理映射与 Redis 替身，不连接开发库。"""
 
 import time
+
+from fastapi.exceptions import RequestValidationError
+from redis.exceptions import RedisError
+from sqlalchemy.exc import SQLAlchemyError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from core.exception_handlers import (
+    BusinessError, business_error_handler, database_error_handler, http_error_handler,
+    redis_error_handler, unexpected_error_handler, validation_error_handler,
+)
+
+# 与主应用使用相同处理器，离线测试直接在 FastAPI 构造时注册。
+EXCEPTION_HANDLERS = {
+    BusinessError: business_error_handler,
+    RequestValidationError: validation_error_handler,
+    SQLAlchemyError: database_error_handler,
+    RedisError: redis_error_handler,
+    StarletteHTTPException: http_error_handler,
+    Exception: unexpected_error_handler,
+}
 
 
 class FakeRedis:

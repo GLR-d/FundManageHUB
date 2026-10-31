@@ -9,9 +9,9 @@ from PIL import Image, UnidentifiedImageError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from core import oss
-from core.config import Settings
-from core.errors import BusinessError
+from utils import oss
+from config.settings import Settings
+from core.exception_handlers import BusinessError
 from core.messages import Messages
 from service.image_asset import ImageAssetService
 from service.image_urls import ensure_image_config

@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from sqlalchemy import select
 
-from core.database import DatabaseSession
+from config.database import DatabaseSession
 from schemas.response.result import Result
 
 router = APIRouter(tags=["运行状态"])

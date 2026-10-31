@@ -2,9 +2,9 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import Settings
-from core.errors import BusinessError
-from core.jwt_tokens import SessionIdentity
+from config.settings import Settings
+from core.exception_handlers import BusinessError
+from utils.jwt_tokens import SessionIdentity
 from core.messages import Messages
 from repository.user import UserRepository
 from schemas.request.auth_request import UserUpdateRequest

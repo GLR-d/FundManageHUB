@@ -10,7 +10,7 @@ from pydantic import Field, ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from agents.tools.common import AgentContext
-from core import database
+from config import database
 from core.fund_types import FUND_TYPES
 from schemas.request.chat_tool_request import BillSearchRequest, CategoryRankingRequest, MonthToolRequest
 from schemas.request.dashboard_request import DashboardMonth

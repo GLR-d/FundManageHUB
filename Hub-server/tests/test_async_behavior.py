@@ -5,9 +5,9 @@ from threading import Event
 
 import pytest
 
-from core import database
-from core.database import DatabaseSession
-from core.security import hash_password
+from config import database
+from config.database import DatabaseSession
+from utils.security import hash_password
 from repository.register import RegisterRepository
 from test_auth import PASSWORD, logged_in, register
 

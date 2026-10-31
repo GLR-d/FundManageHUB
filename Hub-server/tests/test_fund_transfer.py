@@ -10,7 +10,7 @@ from io import StringIO
 import pytest
 from sqlalchemy import event
 
-from core import database
+from config import database
 from service.fund_transfer import FundTransferService
 from test_fund import authenticate, create_fund
 

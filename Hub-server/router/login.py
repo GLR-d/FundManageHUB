@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response
 
-from core.database import DatabaseSession
-from core import mail
-from core.errors import BusinessError
-from core.security import CAPTCHA_COOKIE
+from config.database import DatabaseSession
+from utils import mail
+from core.exception_handlers import BusinessError
+from utils.security import CAPTCHA_COOKIE
 from schemas.request.auth_request import CaptchaVerifyRequest, EmailRequest, LoginRequest, PasswordResetRequest
 from schemas.response.auth_response import CaptchaData, LoginData
 from schemas.response.result import Result

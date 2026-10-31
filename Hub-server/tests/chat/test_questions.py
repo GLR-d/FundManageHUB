@@ -15,12 +15,11 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.runtime import get_runtime
 from langgraph.types import Command, interrupt
 
-from helpers import FakeRedis
+from helpers import EXCEPTION_HANDLERS, FakeRedis
 from test_stream import AgentContext, parse_events
 from agents.tools.common import ask_user
 from core.auth_middleware import JWTAuthMiddleware
-from core.exception_handlers import register_exception_handlers
-from core.jwt_tokens import SessionIdentity
+from utils.jwt_tokens import SessionIdentity
 from router.chat import router
 
 
@@ -32,14 +31,13 @@ class ChatQuestionTests(unittest.IsolatedAsyncioTestCase):
         self.release_answer = asyncio.Event()
         self.hold_answer = False
         self.graph = self.build_graph()
-        self.app = FastAPI()
+        self.app = FastAPI(exception_handlers=EXCEPTION_HANDLERS)
         self.app.state.settings = object()
         self.app.state.redis_client = self.redis
         self.app.state.chat_checkpointer = self.checkpointer
         self.app.state.chat_graph = self.graph
         self.app.include_router(router)
         self.app.add_middleware(JWTAuthMiddleware)
-        register_exception_handlers(self.app)
 
         async def identity(token, settings):
             if token not in {"one", "two"}:

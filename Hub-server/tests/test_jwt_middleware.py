@@ -7,8 +7,8 @@ import pytest
 from fastapi import Request
 from sqlalchemy.exc import OperationalError
 
-from core.jwt_tokens import decode_access_token
-from core.security import hash_secret
+from utils.jwt_tokens import decode_access_token
+from utils.security import hash_secret
 from test_auth import logged_in, login, register
 
 
@@ -143,7 +143,7 @@ async def test_middleware_database_failure_keeps_result_and_hides_details(client
     def unavailable(*args, **kwargs):
         raise OperationalError(None, None, RuntimeError("private database connection details"))
 
-    monkeypatch.setattr("core.database.async_session", unavailable)
+    monkeypatch.setattr("config.database.async_session", unavailable)
     response = await client.get("/user", headers={"token": token})
     assert response.status_code == 503
     assert response.json() == {"code": 0, "msg": "数据库暂时不可用，请稍后重试", "data": None}

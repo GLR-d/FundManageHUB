@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response
 
-from core import mail
-from core.database import DatabaseSession
+from utils import mail
+from config.database import DatabaseSession
 from schemas.request.auth_request import (
     BindingEmailCodeRequest, BindingEmailRequest, EmailCodeRequest, EmailRequest,
     PasswordResetRequest, UserUpdateRequest, VerifiedPasswordChangeRequest,

@@ -8,7 +8,7 @@ from langgraph.types import interrupt
 from pydantic import Field
 from sqlalchemy.exc import SQLAlchemyError
 
-from core import database
+from config import database
 from core.fund_types import EXPENSE_TYPES, INCOME_TYPES
 from service.dashboard import DashboardService
 

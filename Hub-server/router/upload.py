@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, File, Request, UploadFile
 
-from core.database import DatabaseSession
+from config.database import DatabaseSession
 from schemas.response.result import Result
 from schemas.request.upload_request import ImageRefreshRequest
 from service.image_asset import ImageAssetService

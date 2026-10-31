@@ -8,12 +8,12 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from core import database
-from core.config import Settings
+from config import database
+from config.settings import Settings
 from core.exception_handlers import database_error_response, error_response
-from core.jwt_tokens import SessionIdentity, decode_access_token
+from utils.jwt_tokens import SessionIdentity, decode_access_token
 from core.messages import Messages
-from core.security import hash_secret, utcnow
+from utils.security import hash_secret, utcnow
 from repository.login import LoginRepository
 
 PUBLIC_PATHS = frozenset({

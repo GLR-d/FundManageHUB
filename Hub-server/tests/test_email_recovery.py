@@ -17,9 +17,10 @@ from models.auth import AuthEmailRateLimit
 from schemas.request.auth_request import EmailRequest
 
 from client_helpers import app_client, browser_client
-from core import database, mail
-from core.mail import send_email as send_email_with_real_transport
-from core.security import hash_secret, utcnow, verify_password
+from config import database
+from utils import mail
+from utils.mail import send_email as send_email_with_real_transport
+from utils.security import hash_secret, utcnow, verify_password
 from repository.email import EmailRepository
 from test_auth import PASSWORD, account_email, headers, logged_in, login, register
 
@@ -459,7 +460,7 @@ async def test_background_smtp_failure_logs_no_credentials_or_code(settings, mon
         raise smtplib.SMTPAuthenticationError(535, secret.encode())
 
     monkeypatch.setattr(mail, "_send_email", fail)
-    with caplog.at_level(logging.ERROR, logger="core.mail"):
+    with caplog.at_level(logging.ERROR, logger="utils.mail"):
         await send_email_with_real_transport(settings, EMAIL, "重置密码", secret)
     assert "SMTPAuthenticationError" in caplog.text
     assert secret not in caplog.text and settings.smtp_password not in caplog.text and EMAIL not in caplog.text

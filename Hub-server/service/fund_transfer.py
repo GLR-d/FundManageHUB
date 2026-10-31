@@ -11,8 +11,8 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from core.config import Settings
-from core.errors import BusinessError
+from config.settings import Settings
+from core.exception_handlers import BusinessError
 from core.fund_types import FUND_TYPES, FUND_TYPE_CODES
 from core.messages import Messages
 from repository.fund import FundRepository

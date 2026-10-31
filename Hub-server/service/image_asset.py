@@ -8,11 +8,12 @@ from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from core import database, oss
-from core.config import Settings
-from core.errors import BusinessError
+from config import database
+from utils import oss
+from config.settings import Settings
+from core.exception_handlers import BusinessError
 from core.messages import Messages
-from core.security import utcnow
+from utils.security import utcnow
 from models.image_asset import ImageAsset
 from repository.image_asset import ImageAssetRepository
 from service.image_urls import ImageUrls, ensure_image_config

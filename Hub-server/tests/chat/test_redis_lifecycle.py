@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-from core.redis_client import open_checkpointer, open_redis
+from config.redis_client import open_checkpointer, open_redis
 
 
 class Client:
@@ -37,7 +37,7 @@ class SharedRedisLifecycleTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_external_client_is_shared_and_closed_only_by_outer_context(self):
         client = Client()
-        with patch("core.redis_client.Redis.from_url", return_value=client) as factory, patch("core.redis_client.AsyncRedisSaver", Saver):
+        with patch("config.redis_client.Redis.from_url", return_value=client) as factory, patch("config.redis_client.AsyncRedisSaver", Saver):
             async with open_redis("redis://unused.test/0") as shared:
                 async with open_checkpointer(shared) as saver:
                     self.assertIs(shared, client)
@@ -55,7 +55,7 @@ class SharedRedisLifecycleTests(unittest.IsolatedAsyncioTestCase):
             async def __aenter__(self):
                 raise RuntimeError("setup failed")
 
-        with patch("core.redis_client.Redis.from_url", return_value=client) as factory, patch("core.redis_client.AsyncRedisSaver", SetupFailure):
+        with patch("config.redis_client.Redis.from_url", return_value=client) as factory, patch("config.redis_client.AsyncRedisSaver", SetupFailure):
             with self.assertRaisesRegex(RuntimeError, "setup failed"):
                 async with open_redis("redis://unused.test/0") as shared:
                     async with open_checkpointer(shared):
@@ -65,7 +65,7 @@ class SharedRedisLifecycleTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_error_during_use_still_closes_shared_client(self):
         client = Client()
-        with patch("core.redis_client.Redis.from_url", return_value=client), patch("core.redis_client.AsyncRedisSaver", Saver):
+        with patch("config.redis_client.Redis.from_url", return_value=client), patch("config.redis_client.AsyncRedisSaver", Saver):
             with self.assertRaisesRegex(RuntimeError, "synthetic failure"):
                 async with open_redis("redis://unused.test/0") as shared:
                     async with open_checkpointer(shared):

@@ -6,7 +6,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import utcnow
+from utils.security import utcnow
 from models.monthly_expense_limit import MonthlyExpenseLimit
 
 

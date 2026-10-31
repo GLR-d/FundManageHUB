@@ -137,7 +137,7 @@ async def test_statistics_database_year_limits_do_not_overflow(client, fund_head
 
 async def test_statistics_sums_in_sql_instead_of_loading_every_record(client, fund_headers, settings):
     from sqlalchemy import event
-    from core import database
+    from config import database
 
     for minute in range(10):
         await create_fund(client, fund_headers, time=f"2026-10-14T12:{minute:02d}", amount="0.01")

@@ -8,7 +8,7 @@ from agents.llm import model
 from agents.prompts import SYSTEM_PROMPT
 from agents.tools import tools
 from agents.tools.common import AgentContext
-from core.security import utcnow
+from utils.security import utcnow
 
 
 # 告诉模型有哪些工具可以请求调用

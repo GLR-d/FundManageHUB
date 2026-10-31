@@ -4,7 +4,7 @@ from fastapi import APIRouter, File, Path, Query, Request, UploadFile
 from fastapi.responses import Response
 from starlette.concurrency import run_in_threadpool
 
-from core.database import DatabaseSession
+from config.database import DatabaseSession
 from schemas.request.fund_request import (
     MAX_FUND_ID, FundCursor, FundRequest, FundUpdateRequest,
 )

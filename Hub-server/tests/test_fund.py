@@ -9,7 +9,7 @@ from PIL import Image
 from sqlalchemy import event
 
 from client_helpers import app_client
-from core import database
+from config import database
 from repository.fund import FundRepository
 from test_auth import register, login
 

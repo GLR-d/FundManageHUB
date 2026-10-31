@@ -10,11 +10,11 @@ import pytest
 
 from client_helpers import app_client, browser_client
 
-from core import mail
-from core.errors import BusinessError
-from core.jwt_tokens import decode_access_token
+from utils import mail
+from core.exception_handlers import BusinessError
+from utils.jwt_tokens import decode_access_token
 from core.messages import Messages
-from core.security import CAPTCHA_COOKIE, hash_secret, utcnow, verify_password
+from utils.security import CAPTCHA_COOKIE, hash_secret, utcnow, verify_password
 
 PASSWORD = "test-password-123"
 

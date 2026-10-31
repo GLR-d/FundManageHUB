@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import jwt
 
-from core.config import Settings
+from config.settings import Settings
 
 
 @dataclass(frozen=True)

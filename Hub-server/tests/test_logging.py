@@ -19,7 +19,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 sys.path.insert(0, sys.argv[1])
-from core.logging_config import configure_logging
+from config.logging_config import configure_logging
 
 log_dir = Path(sys.argv[2])
 

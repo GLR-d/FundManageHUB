@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.jwt_tokens import SessionIdentity
+from utils.jwt_tokens import SessionIdentity
 from repository.monthly_limit import MonthlyLimitRepository
 from schemas.request.monthly_limit_request import MonthlyLimitRequest
 from schemas.response.monthly_limit_response import MonthlyLimitResponse

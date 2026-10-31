@@ -20,7 +20,7 @@ from pydantic import ValidationError
 from sqlalchemy.dialects import mysql
 from sqlalchemy.exc import SQLAlchemyError
 
-from core import config
+from config import settings as config
 
 @tool
 def search_knowledge(query: str) -> str:

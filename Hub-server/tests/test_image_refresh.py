@@ -106,7 +106,7 @@ async def test_refresh_failure_returns_only_the_generic_error(
     def unavailable(config, key):
         raise RuntimeError(f"private-signing-error {config.oss_access_key_id} {config.oss_access_key_secret}")
 
-    monkeypatch.setattr("core.oss.sign_image_url", unavailable)
+    monkeypatch.setattr("utils.oss.sign_image_url", unavailable)
     body = assert_error(await refresh(client, image_headers, uploaded), 502)
     combined = str(body) + caplog.text
     assert "private-signing-error" not in combined
@@ -125,7 +125,7 @@ async def test_slow_signing_does_not_block_health(client, image_headers, monkeyp
         assert release.wait(timeout=5), "续签必须在工作线程中执行"
         return "https://images.example.test/" + key + "?renewed-signature"
 
-    monkeypatch.setattr("core.oss.sign_image_url", held_sign)
+    monkeypatch.setattr("utils.oss.sign_image_url", held_sign)
     task = asyncio.create_task(refresh(client, image_headers, uploaded))
     try:
         await asyncio.wait_for(started.wait(), timeout=2)

@@ -5,7 +5,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from core.config import PROJECT_ROOT
+from config.settings import PROJECT_ROOT
 
 _OWNED = "_managehub_logging_handler"
 

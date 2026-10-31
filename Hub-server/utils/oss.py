@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 
 import alibabacloud_oss_v2 as oss
 
-from core.config import Settings
+from config.settings import Settings
 
 MANAGED_IMAGE_KEY = re.compile(r"images/([1-9][0-9]*)/[a-f0-9]{32}\.(?:jpg|png)")
 

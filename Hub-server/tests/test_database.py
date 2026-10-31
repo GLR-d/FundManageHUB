@@ -9,8 +9,8 @@ import pytest
 from sqlalchemy import DDL, inspect, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from core import database
-from core.config import PROJECT_ROOT
+from config import database
+from config.settings import PROJECT_ROOT
 from models.fund import Fund
 from repository.fund import FundRepository
 from schemas.request.fund_request import FundRequest

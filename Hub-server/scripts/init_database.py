@@ -8,8 +8,8 @@ from sqlalchemy import DDL
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.config import Settings, get_settings
-from core.database import create_database_engine
+from config.settings import Settings, get_settings
+from config.database import create_database_engine
 from models import Base
 
 

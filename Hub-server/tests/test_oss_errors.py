@@ -4,8 +4,8 @@ import alibabacloud_oss_v2 as oss
 import pytest
 from requests.exceptions import ProxyError
 
-from core.errors import BusinessError
-from core.oss import describe_error
+from core.exception_handlers import BusinessError
+from utils.oss import describe_error
 from service.upload import UploadService
 
 
@@ -107,12 +107,12 @@ def test_broken_unwrap_uses_standard_cause_and_does_not_hide_the_original_failur
 
 
 def test_upload_logs_diagnostic_fields_but_returns_the_generic_business_error(settings, monkeypatch, caplog):
-    monkeypatch.setattr("core.oss.sign_image_url", lambda *args: "https://example.test/?Signature=private-signature")
+    monkeypatch.setattr("utils.oss.sign_image_url", lambda *args: "https://example.test/?Signature=private-signature")
 
     def unavailable(*args):
         raise wrapped(service_error())
 
-    monkeypatch.setattr("core.oss.put_image", unavailable)
+    monkeypatch.setattr("utils.oss.put_image", unavailable)
     with pytest.raises(BusinessError) as captured:
         UploadService(None, settings, 1)._save_image("images/1/" + "a" * 32 + ".png", b"image", "image/png")
     assert captured.value.status_code == 502

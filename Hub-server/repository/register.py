@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import utcnow
+from utils.security import utcnow
 from models.user import User
 
 

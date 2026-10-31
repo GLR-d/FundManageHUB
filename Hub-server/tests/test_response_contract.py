@@ -166,7 +166,7 @@ async def test_database_failure_returns_result_without_internal_details(client, 
     def unavailable(*args, **kwargs):
         raise OperationalError(None, None, RuntimeError("private database connection details"))
 
-    monkeypatch.setattr("core.database.async_session", unavailable)
+    monkeypatch.setattr("config.database.async_session", unavailable)
     response = await client.get("/health")
     assert response.status_code == 503
     assert response.json() == {"code": 0, "msg": "数据库暂时不可用，请稍后重试", "data": None}

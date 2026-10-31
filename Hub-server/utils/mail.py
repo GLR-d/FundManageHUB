@@ -9,8 +9,8 @@ from email.message import EmailMessage
 
 from starlette.concurrency import run_in_threadpool
 
-from core.config import Settings
-from core.errors import BusinessError
+from config.settings import Settings
+from core.exception_handlers import BusinessError
 from core.messages import Messages
 
 logger = logging.getLogger(__name__)

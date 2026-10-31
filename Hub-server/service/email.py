@@ -8,12 +8,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from core.config import Settings
-from core.errors import BusinessError
-from core.jwt_tokens import SessionIdentity
-from core.mail import ensure_mail_config
+from config.settings import Settings
+from core.exception_handlers import BusinessError
+from utils.jwt_tokens import SessionIdentity
+from utils.mail import ensure_mail_config
 from core.messages import Messages
-from core.security import hash_password, hash_secret, utcnow
+from utils.security import hash_password, hash_secret, utcnow
 from repository.email import EmailRepository
 from repository.login import LoginRepository
 from repository.user import UserRepository

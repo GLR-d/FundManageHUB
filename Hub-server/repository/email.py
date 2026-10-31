@@ -6,7 +6,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.security import hash_secret
+from utils.security import hash_secret
 from models.auth import AuthEmailCode, AuthEmailRateLimit
 
 

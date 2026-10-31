@@ -4,10 +4,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from core.config import Settings
-from core.errors import BusinessError
+from config.settings import Settings
+from core.exception_handlers import BusinessError
 from core.messages import Messages
-from core.security import hash_password
+from utils.security import hash_password
 from repository.register import RegisterRepository
 from repository.user import UserRepository
 from schemas.request.auth_request import RegisterRequest

@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import inspect
 
 from client_helpers import app_client
-from core import database
+from config import database
 from scripts.migrate_monthly_expense_limits import migrate_monthly_expense_limits
 from service.monthly_limit import MonthlyLimitService
 from test_auth import logged_in, login, register

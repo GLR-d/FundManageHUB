@@ -10,9 +10,9 @@ from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
 
 from client_helpers import browser_client
-from core import database
-from core.oss import delete_image as sdk_delete_image
-from core.security import utcnow
+from config import database
+from utils.oss import delete_image as sdk_delete_image
+from utils.security import utcnow
 from models.image_asset import ImageAsset
 from scripts.migrate_image_assets import migrate_image_assets
 from service.image_asset import cleanup_expired_images
@@ -58,7 +58,7 @@ async def test_upload_is_committed_before_the_first_oss_request(
         assert row["user_id"] == int(key.split("/")[1])
         assert_unused(row)
 
-    monkeypatch.setattr("core.oss.put_image", inspect_registered)
+    monkeypatch.setattr("utils.oss.put_image", inspect_registered)
     response = await upload(client, image_headers)
     assert response.status_code == 200 and response.json()["code"] == 1, response.text
     assert len(observed) == 1 and oss_objects == []
@@ -78,7 +78,7 @@ async def test_failed_upload_remains_registered_and_can_be_cleaned(
     def unavailable(*args):
         raise RuntimeError("simulated PUT response loss")
 
-    monkeypatch.setattr("core.oss.put_image", unavailable)
+    monkeypatch.setattr("utils.oss.put_image", unavailable)
     assert_error(await upload(client, image_headers), 502)
     rows = await query("SELECT * FROM image_assets")
     assert len(rows) == 1
@@ -102,7 +102,7 @@ async def test_cancelled_upload_still_has_a_recoverable_asset(
         loop.call_soon_threadsafe(started.set)
         assert release.wait(timeout=5)
 
-    monkeypatch.setattr("core.oss.put_image", held_put)
+    monkeypatch.setattr("utils.oss.put_image", held_put)
     task = asyncio.create_task(upload(client, image_headers))
     try:
         await asyncio.wait_for(started.wait(), timeout=2)
@@ -235,7 +235,7 @@ async def test_cleanup_failure_keeps_a_durable_claim_and_retries_later(
     def unavailable(config, key):
         raise RuntimeError(f"private-deletion-error {config.oss_access_key_id} {config.oss_access_key_secret}")
 
-    monkeypatch.setattr("core.oss.delete_image", unavailable)
+    monkeypatch.setattr("utils.oss.delete_image", unavailable)
     assert await cleanup_expired_images(settings) == 0
     failed = await asset(query, key)
     assert failed["deleting"] and failed["reference_count"] == 0
@@ -248,7 +248,7 @@ async def test_cleanup_failure_keeps_a_durable_claim_and_retries_later(
     def recovered(config, key):
         oss_deletions.append({"bucket": config.oss_bucket, "key": key})
 
-    monkeypatch.setattr("core.oss.delete_image", recovered)
+    monkeypatch.setattr("utils.oss.delete_image", recovered)
     await make_due(query, key)
     assert await cleanup_expired_images(settings) == 1
     assert await query("SELECT * FROM image_assets") == []
@@ -271,7 +271,7 @@ async def test_claim_is_committed_before_delete_and_competing_cleanup_or_attach_
         loop.call_soon_threadsafe(started.set)
         assert release.wait(timeout=5)
 
-    monkeypatch.setattr("core.oss.delete_image", held_delete)
+    monkeypatch.setattr("utils.oss.delete_image", held_delete)
     task = asyncio.create_task(cleanup_expired_images(settings))
     try:
         await asyncio.wait_for(started.wait(), timeout=2)
@@ -403,7 +403,7 @@ async def test_optional_migration_scan_registers_only_managed_objects_of_existin
         scans.append(config.oss_bucket)
         return [key, orphan, unknown_owner, "uploads/legacy.png"]
 
-    monkeypatch.setattr("core.oss.list_image_keys", inventory)
+    monkeypatch.setattr("utils.oss.list_image_keys", inventory)
     result = await migrate_image_assets(settings, scan_oss=True)
     assert result["created"] == 2 and result["scanned"] == 4 and result["skipped"] == 2
     assert (await asset(query, key))["reference_count"] == 1
